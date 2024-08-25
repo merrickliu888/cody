@@ -1,0 +1,2 @@
+# cody
+AI Native shell.
