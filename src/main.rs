@@ -10,6 +10,8 @@ use shell::variables::*;
 use std::collections::HashMap;
 use std::env;
 use std::io::{self, Write};
+use std::process::Child;
+use std::process::Command;
 
 fn main() {
     // TODO
@@ -22,9 +24,7 @@ fn main() {
     // Environment Variables
 
     // Initialize the shell
-    // start up ollama
-
-    #[allow(unused_mut)]
+    let (_ollama_server, _ollama_llm) = init_shell();
     let mut shell_variables: HashMap<String, String> = HashMap::new();
     loop {
         // Print prompt
@@ -39,23 +39,52 @@ fn main() {
         if input == "" {
             continue;
         }
+        // Parse variables here.
+        // let input_with_variables_inserted: String = insert_variables(input, &shell_variables);
 
         // Checking if we are setting a variable
         if input.contains("=") {
-            handle_variable_assigment(&input, &shell_variables).expect("Failed to assign variable.");
+            if let Err(err) = handle_variable_assigment(&input, &mut shell_variables) {
+                eprintln!("Failed to assign variable: {}", err)
+            } else {
+                println!("Variable assigned!");
+            }
             continue;
         }
 
         // Parse commands
-        let commands: Vec<ShellCommand> =
-            ShellCommand::parse_commands(&input, &shell_variables).expect("Failed to parse commands.");
-        if BUILT_IN_SHELL_COMMANDS.contains(commands[0].name) {
-            ShellCommand::handle_built_in_shell_commands(&commands).expect("Failed to run built in commands.");
-        // TODO how to handle exit?
-        } else {
-            ShellCommand::handle_shell_commands(&commands).expect("Failed to run commands.");
-        }
+        // let commands: Vec<ShellCommand> =
+        //     ShellCommand::parse_commands(&input, &shell_variables).expect("Failed to parse commands.");
+        // if BUILT_IN_SHELL_COMMANDS.contains(commands[0].name) {
+        //     ShellCommand::handle_built_in_shell_commands(&commands).expect("Failed to run built in commands.");
+        // // TODO how to handle exit?
+        // } else {
+        //     ShellCommand::handle_shell_commands(&commands).expect("Failed to run commands.");
+        // }
 
         println!("{}", input);
     }
+}
+
+struct ChildGuard {
+    child: std::process::Child,
+}
+
+impl Drop for ChildGuard {
+    fn drop(&mut self) {
+        let _ = self.child.kill();
+    }
+}
+
+fn init_shell() -> (ChildGuard, ChildGuard) {
+    let ollama_server = Command::new("ollama")
+        .arg("serve")
+        .spawn()
+        .expect("Failed to initialize Cody: ollama serve");
+    let ollama_llm = Command::new("ollama")
+        .args(["run", "llama3.1"])
+        .spawn()
+        .expect("Failed to initialize Cody: ollama run llama3.1");
+    println!("Cody initialized with LLama3.1");
+    return (ChildGuard { child: ollama_server }, ChildGuard { child: ollama_llm });
 }

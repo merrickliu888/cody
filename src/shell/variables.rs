@@ -2,19 +2,19 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::fmt::{Display, Error, Formatter};
 
-pub fn insert_variables(input: &str, variables: &HashMap<String, String>) -> String {
-    // For now, variables have to be used in this format: ${...}, and ignore single vs double quote expansion. We will always expand.
-    // let re = Regex::new(r"\$\{([^}]+\)}").unwrap();
-    // let input_with_variables = re.replace_all(input, |caps| {
-    //     let var_name = caps[0];
-    //     variables.get(var_name).expect("stiff")
-    // })
-    // println!(input_with_variables);
-    // return input_with_variables;
-    let result = String::new();
+// pub fn insert_variables(input: &str, variables: &HashMap<String, String>) -> String {
+//     // For now, variables have to be used in this format: ${...}, and ignore single vs double quote expansion. We will always expand.
+//     // let re = Regex::new(r"\$\{([^}]+\)}").unwrap();
+//     // let input_with_variables = re.replace_all(input, |caps| {
+//     //     let var_name = caps[0];
+//     //     variables.get(var_name).expect("stiff")
+//     // })
+//     // println!(input_with_variables);
+//     // return input_with_variables;
+//     let result = String::new();
 
-    return result;
-}
+//     return result;
+// }
 
 pub fn handle_variable_assigment<'a>(
     input: &'a str,
