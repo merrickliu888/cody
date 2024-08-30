@@ -10,8 +10,7 @@ use shell::variables::*;
 use std::collections::HashMap;
 use std::env;
 use std::io::{self, Write};
-use std::process::Child;
-use std::process::Command;
+use std::process::{Child, Command, Stdio};
 
 fn main() {
     // TODO
@@ -79,10 +78,12 @@ impl Drop for ChildGuard {
 fn init_shell() -> (ChildGuard, ChildGuard) {
     let ollama_server = Command::new("ollama")
         .arg("serve")
+        // .stderr(Stdio::null())
         .spawn()
         .expect("Failed to initialize Cody: ollama serve");
     let ollama_llm = Command::new("ollama")
         .args(["run", "llama3.1"])
+        // .stderr(Stdio::null())
         .spawn()
         .expect("Failed to initialize Cody: ollama run llama3.1");
     println!("Cody initialized with LLama3.1");
