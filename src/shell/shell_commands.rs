@@ -29,7 +29,7 @@ impl<'a> ShellCommand<'a> {
         }
     }
 
-    pub fn parse_commands(input: &str, variables: &HashMap<String, String>) -> Result<Vec<ShellCommand<'a>>, ()> {
+    pub fn parse_commands(input: &str, variables: &HashMap<&str, &str>) -> Result<Vec<ShellCommand<'a>>, ()> {
         println!("parsed_commands, input: {}, variables: {:?}", input, variables);
         let fake_commands = vec![Self::new("asdf", &[])];
         Ok(fake_commands)
