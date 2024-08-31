@@ -1,4 +1,4 @@
-#![allow(unused_imports)]
+#![allow(unused)]
 
 mod shell {
     pub mod shell_commands;
@@ -23,7 +23,7 @@ fn main() {
     // Environment Variables
 
     // Initialize the shell
-    let (_ollama_server, _ollama_llm) = init_shell();
+    // let (_ollama_server, _ollama_llm) = init_shell();
     let mut shell_variables: HashMap<String, String> = HashMap::new();
     loop {
         // Print prompt
@@ -39,10 +39,16 @@ fn main() {
             continue;
         }
         // Parse variables here.
-        // let input_with_variables_inserted: String = insert_variables(input, &shell_variables);
+        let input_with_variables_inserted: String = match insert_variables(input, &shell_variables) {
+            Ok(new_input) => new_input,
+            Err(err) => {
+                eprintln!("Failed to parse variable: {}", err);
+                continue;
+            }
+        };
 
         // Checking if we are setting a variable
-        if input.contains("=") {
+        if input_with_variables_inserted.contains("=") {
             if let Err(err) = handle_variable_assigment(&input, &mut shell_variables) {
                 eprintln!("Failed to assign variable: {}", err)
             } else {
@@ -61,7 +67,7 @@ fn main() {
         //     ShellCommand::handle_shell_commands(&commands).expect("Failed to run commands.");
         // }
 
-        println!("{}", input);
+        println!("{}", input_with_variables_inserted);
     }
 }
 

@@ -1,29 +1,32 @@
-use regex::Regex;
+use regex::{Captures, Regex};
 use std::collections::HashMap;
 use std::fmt::{Display, Error, Formatter};
 
-// pub fn insert_variables(input: &str, variables: &HashMap<String, String>) -> String {
-//     // For now, variables have to be used in this format: ${...}, and ignore single vs double quote expansion. We will always expand.
-//     // let re = Regex::new(r"\$\{([^}]+\)}").unwrap();
-//     // let input_with_variables = re.replace_all(input, |caps| {
-//     //     let var_name = caps[0];
-//     //     variables.get(var_name).expect("stiff")
-//     // })
-//     // println!(input_with_variables);
-//     // return input_with_variables;
-//     let result = String::new();
-
-//     return result;
-// }
+pub fn insert_variables<'a>(input: &'a str, variables: &HashMap<String, String>) -> Result<String, VariableErrors> {
+    // For now, variables have to be used in this format: ${...}, and ignore single vs double quote expansion. We will always expand.
+    let re = Regex::new(r"\$\{([^}]+)\}").unwrap();
+    let replacement = |caps: &Captures| -> Result<String, VariableErrors> {
+        let var_name = caps[1].to_string();
+        if !variables.contains_key(&var_name) {
+            return Err(VariableErrors::InvalidVariableName {
+                variable_name: var_name,
+            });
+        }
+        return Ok(variables.get(&var_name).unwrap().clone());
+    };
+    return replace_all(&re, input, replacement);
+}
 
 pub fn handle_variable_assigment<'a>(
     input: &'a str,
     variables: &mut HashMap<String, String>,
-) -> Result<(), VariableErrors<'a>> {
+) -> Result<(), VariableErrors> {
     let parts: Vec<&str> = input.splitn(2, '=').collect();
     let name: &'a str = parts[0];
     if !check_valid_variable_name(name) {
-        return Err(VariableErrors::InvalidVariableName { variable_name: name });
+        return Err(VariableErrors::InvalidVariableName {
+            variable_name: name.to_string(),
+        });
     }
 
     let value: &'a str = parts[1];
@@ -58,16 +61,33 @@ fn check_valid_variable_value(value: &str) -> bool {
     return true;
 }
 
-pub enum VariableErrors<'a> {
-    InvalidVariableName { variable_name: &'a str },
+pub enum VariableErrors {
+    InvalidVariableName { variable_name: String },
     InvalidVariableValue,
 }
 
-impl Display for VariableErrors<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+impl Display for VariableErrors {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match self {
             Self::InvalidVariableName { variable_name } => write!(f, "Invalid variable name: {}", variable_name),
             Self::InvalidVariableValue => write!(f, "Invalid variable value"),
         }
     }
+}
+
+fn replace_all<E>(
+    re: &Regex,
+    haystack: &str,
+    replacement: impl Fn(&Captures) -> Result<String, E>,
+) -> Result<String, E> {
+    let mut new = String::with_capacity(haystack.len());
+    let mut last_match = 0;
+    for caps in re.captures_iter(haystack) {
+        let m = caps.get(0).unwrap();
+        new.push_str(&haystack[last_match..m.start()]);
+        new.push_str(&replacement(&caps)?);
+        last_match = m.end();
+    }
+    new.push_str(&haystack[last_match..]);
+    Ok(new)
 }
