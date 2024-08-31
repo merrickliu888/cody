@@ -1,16 +1,7 @@
-use once_cell::sync::Lazy;
 use reqwest;
-use std::collections::{HashMap, HashSet};
 use std::env;
 use std::path::Path;
 use std::process::{Child, Command};
-
-pub static BUILT_IN_SHELL_COMMANDS: Lazy<HashSet<&str>> = Lazy::new(|| {
-    let mut set: HashSet<&str> = HashSet::new();
-    set.insert("cd");
-    set.insert("exit");
-    return set;
-});
 
 pub fn execute_input(input: &str) -> Result<CommandType, String> {
     let first_command_name = input.split_whitespace().next().unwrap();

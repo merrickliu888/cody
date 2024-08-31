@@ -75,7 +75,7 @@ fn init_shell() -> (ChildGuard, ChildGuard) {
         .spawn()
         .expect("Failed to initialize Cody: ollama serve");
     let ollama_llm = Command::new("ollama")
-        .args(["run", "llama3.1"])
+        .args(["run", "cody"])
         .stdin(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
