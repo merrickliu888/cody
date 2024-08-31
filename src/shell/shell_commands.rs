@@ -13,28 +13,80 @@ pub fn execute_input(input: &str) -> Result<CommandType, String> {
     } else if first_command_name == "exit" {
         return Ok(CommandType::Exit);
     } else {
-        match execute_commands(&mut parse_commands(input)) {
+        let mut parsed_commands = parse_commands(input)?;
+        match execute_commands(&mut parsed_commands) {
             Ok(command_type) => return Ok(command_type),
             Err(err) => return Err(format!("{}", err)),
         }
     }
 }
 
-pub fn parse_commands(input: &str) -> Vec<ShellCommand> {
+pub fn parse_commands(input: &str) -> Result<Vec<ShellCommand>, String> {
     // Split by pipes
-    let command_parts = input.split('|');
-    let mut commands: Vec<ShellCommand> = Vec::new();
+    let command_parts: Vec<&str> = input.split('|').collect();
+    let mut shell_commands: Vec<ShellCommand> = Vec::new();
 
-    for command_part in command_parts {
-        let parts = command_part.trim().split_whitespace();
+    for (command_part_index, command_part) in command_parts.iter().enumerate() {
+        let parts: Vec<&str> = command_part.trim().split_whitespace().collect();
+        if parts.is_empty() {
+            return Err("Empty command".to_string());
+        }
+        let mut command = Command::new(parts[0]);
         let mut args: Vec<&str> = Vec::new();
+        let mut input_file: Option<String> = None;
+        let mut out_file: Option<String> = None;
+        let mut append: bool = false;
+
+        let mut i: usize = 1;
+        while i < parts.len() {
+            let token = parts[i];
+            if token == "<" {
+                if command_part_index != 0 {
+                    return Err("Input redirection only allowed for first command".to_string());
+                }
+
+                match parts.get(i + 1) {
+                    Some(file) => {
+                        input_file = Some(file.to_string());
+                        i += 1;
+                    }
+                    None => return Err("No input file provided".to_string()),
+                }
+            } else if token == ">" {
+                if command_part_index != command_parts.len() - 1 {
+                    return Err("Output redirection only allowed for last command".to_string());
+                }
+
+                match parts.get(i + 1) {
+                    Some(file) => {
+                        out_file = Some(file.to_string());
+                        i += 1;
+                    }
+                    None => return Err("No output file provided".to_string()),
+                }
+            } else if token == ">>" {
+                if command_part_index != command_parts.len() - 1 {
+                    return Err("Output redirection only allowed for last command".to_string());
+                }
+
+                match parts.get(i + 1) {
+                    Some(file) => {
+                        out_file = Some(file.to_string());
+                        append = true;
+                        i += 1;
+                    }
+                    None => return Err("No output file provided".to_string()),
+                }
+            } else {
+                args.push(token)
+            }
+            i += 1;
+        }
+        command.args(args);
+        shell_commands.push(ShellCommand::new(command, input_file, out_file, append));
     }
 
-    // for each split:
-    // split by spaces
-    // first element is
-
-    return commands;
+    return Ok(shell_commands);
 }
 
 pub fn execute_ai_command(_input: &str) -> Result<CommandType, String> {
@@ -103,7 +155,15 @@ pub fn execute_commands(shell_commands: &mut Vec<ShellCommand>) -> io::Result<Co
 
         // Handling output redirection
         if let Some(output_file) = output_redirection {
-            let file = File::options().create(true).append(*append).open(output_file)?;
+            let mut file_options = File::options();
+
+            file_options.write(true).create(true);
+            let file = if *append {
+                file_options.append(true).open(output_file)?
+            } else {
+                file_options.truncate(true).open(output_file)?
+            };
+
             command.stdout(Stdio::from(file));
         } else if index < num_commands - 1 {
             command.stdout(Stdio::piped());
@@ -124,6 +184,22 @@ pub struct ShellCommand {
     input_redirection: Option<String>,
     output_redirection: Option<String>,
     append: bool,
+}
+
+impl ShellCommand {
+    fn new(
+        command: Command,
+        input_redirection: Option<String>,
+        output_redirection: Option<String>,
+        append: bool,
+    ) -> ShellCommand {
+        ShellCommand {
+            command,
+            input_redirection,
+            output_redirection,
+            append,
+        }
+    }
 }
 
 pub enum CommandType {

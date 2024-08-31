@@ -13,7 +13,7 @@ use std::process::{Command, Stdio};
 
 fn main() {
     // Initialize the shell
-    let (_ollama_server, _ollama_llm) = init_shell();
+    // let (_ollama_server, _ollama_llm) = init_shell();
     let mut shell_variables: HashMap<String, String> = HashMap::new();
     loop {
         // Print prompt
