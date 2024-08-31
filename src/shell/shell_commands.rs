@@ -1,13 +1,47 @@
-use reqwest;
+use crate::shell::endpoints::{generate_response_local, generate_response_online};
+use crate::shell::variables::{handle_variable_assigment, insert_variables};
+use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
-use std::process::{Child, Command, Output, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::{env, io};
 
-pub fn execute_input(input: &str) -> Result<CommandType, String> {
+pub struct ShellCommand {
+    command: Command,
+    input_redirection: Option<String>,
+    output_redirection: Option<String>,
+    append: bool,
+}
+
+impl ShellCommand {
+    fn new(
+        command: Command,
+        input_redirection: Option<String>,
+        output_redirection: Option<String>,
+        append: bool,
+    ) -> ShellCommand {
+        ShellCommand {
+            command,
+            input_redirection,
+            output_redirection,
+            append,
+        }
+    }
+}
+
+pub enum CommandType {
+    Exit,
+    Other,
+}
+
+pub fn execute_input(
+    input: &str,
+    online: &bool,
+    shell_variables: &mut HashMap<String, String>,
+) -> Result<CommandType, String> {
     let first_command_name = input.split_whitespace().next().unwrap();
     if first_command_name == "cody" {
-        return execute_ai_command(input);
+        return execute_ai_command(input, online, shell_variables);
     } else if first_command_name == "cd" {
         return execute_cd(input);
     } else if first_command_name == "exit" {
@@ -89,25 +123,39 @@ pub fn parse_commands(input: &str) -> Result<Vec<ShellCommand>, String> {
     return Ok(shell_commands);
 }
 
-pub fn execute_ai_command(_input: &str) -> Result<CommandType, String> {
-    unimplemented!()
-    // // get prompt
-    // let user_prompt: &str = input[4..].trim_start();
+pub fn execute_ai_command(
+    input: &str,
+    online: &bool,
+    shell_variables: &mut HashMap<String, String>,
+) -> Result<CommandType, String> {
+    let user_prompt: &str = input[4..].trim_start();
+    let prompt: String = format!(
+        "Here are all the user set variables in a Hash Map: {:?}\n\nWrite the shell commands to accomplish this: {}",
+        shell_variables, user_prompt
+    );
 
-    // // send prompt to llama and wait for response
-    // let url = "http://localhost:11434/api/generate";
-    // let client = reqwest::blocking::Client::new();
-    // let mut req_body = HashMap::new();
-    // // req_body.insert("stream", false);
-    // // req_body.insert("model", "llama3");
+    let llm_response = if *online {
+        generate_response_online(prompt)?
+    } else {
+        generate_response_local(prompt)?
+    };
+    println!("Generated Shell Commands: {}", llm_response);
+    let llm_response = llm_response.trim();
 
-    // let res = client.post(url).json(&req_body).send()?;
+    // Parse variables here.
+    let input_with_variables_inserted =
+        insert_variables(llm_response, shell_variables).map_err(|err| err.to_string())?;
 
-    // // parse response
-
-    // // execute commands
-
-    // unimplemented!()
+    // Checking if we are setting a variable else executing commands
+    if input_with_variables_inserted.contains("=") {
+        match handle_variable_assigment(&input_with_variables_inserted, shell_variables) {
+            Ok(_) => return Ok(CommandType::Other),
+            Err(err) => return Err(err.to_string()),
+        }
+    } else {
+        let mut parsed_commands = parse_commands(input_with_variables_inserted.as_str())?;
+        return execute_commands(&mut parsed_commands).map_err(|err| err.to_string());
+    }
 }
 
 pub fn execute_cd(input: &str) -> Result<CommandType, String> {
@@ -177,32 +225,4 @@ pub fn execute_commands(shell_commands: &mut Vec<ShellCommand>) -> io::Result<Co
     let mut last_command = prev_child_process.unwrap();
     last_command.wait()?;
     return Ok(CommandType::Other);
-}
-
-pub struct ShellCommand {
-    command: Command,
-    input_redirection: Option<String>,
-    output_redirection: Option<String>,
-    append: bool,
-}
-
-impl ShellCommand {
-    fn new(
-        command: Command,
-        input_redirection: Option<String>,
-        output_redirection: Option<String>,
-        append: bool,
-    ) -> ShellCommand {
-        ShellCommand {
-            command,
-            input_redirection,
-            output_redirection,
-            append,
-        }
-    }
-}
-
-pub enum CommandType {
-    Exit,
-    Other,
 }
