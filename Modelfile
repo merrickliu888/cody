@@ -10,5 +10,6 @@ Here are some limitations:
 - Variables values must be surrounded by double quotes.
 - There is no variable expansion.
 - In order to use a variable, you must do ${<variable_name>}
+- Do everything in one line.
 - Basic shell functionality only.
   """

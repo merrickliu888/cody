@@ -1,7 +1,8 @@
 use reqwest;
 use std::env;
+use std::fs::File;
 use std::path::Path;
-use std::process::{Child, Command};
+use std::process::{Child, Command, Output, Stdio};
 
 pub fn execute_input(input: &str) -> Result<CommandType, String> {
     let first_command_name = input.split_whitespace().next().unwrap();
@@ -17,14 +18,21 @@ pub fn execute_input(input: &str) -> Result<CommandType, String> {
     return Ok(CommandType::Other);
 }
 
-pub fn parse_commands(_input: &str) -> Vec<Command> {
+pub fn parse_commands(input: &str) -> Vec<ShellCommand> {
     // Split by pipes
+    let command_parts = input.split('|');
+    let mut commands: Vec<ShellCommand> = Vec::new();
+
+    for command_part in command_parts {
+        let parts = command_part.trim().split_whitespace();
+        let mut args: Vec<&str> = Vec::new();
+    }
 
     // for each split:
     // split by spaces
     // first element is
 
-    unimplemented!()
+    return commands;
 }
 
 pub fn execute_ai_command(_input: &str) {
@@ -69,17 +77,58 @@ pub fn execute_cd(input: &str) -> Result<CommandType, String> {
     return Ok(CommandType::Other);
 }
 
-pub fn execute_commands(commands: &mut Vec<Command>) {
+pub fn execute_commands(shell_commands: &mut Vec<ShellCommand>) {
     let mut child_processes: Vec<Child> = Vec::new();
 
-    for command in commands.iter_mut() {
+    let mut prev_process = None;
+    for (
+        index,
+        ShellCommand {
+            command,
+            input_redirection,
+            output_redirection,
+            append,
+        },
+    ) in shell_commands.iter_mut().enumerate()
+    {
+        // Handling input redirection
+        if let Some(input_file) = input_redirection {
+            let file_result = File::open(input_file);
+            match file_result {
+                Ok(file) => {
+                    command.stdin(Stdio::from(file));
+                }
+                Err(err) => eprintln!("{}", err),
+            }
+        } else if index > 0 {
+            let prev_command = &child_processes[index - 1];
+            command.stdin(Stdio::from(prev_command.stdout.unwrap()));
+        }
+
+        // Handling output redirection
+        if let Some(output_file) = output_redirection {
+            let file_result = File::options().create(true).append(*append).open(output_file);
+            match file_result {
+                Ok(file) => {
+                    command.stdout(Stdio::from(file));
+                }
+                Err(err) => eprintln!("{}", err),
+            }
+        }
+
+        // Executing commands
         let command_spawn = command.spawn();
         match command_spawn {
-            Ok(child) => child_processes.push(child),
+            Ok(child) => {
+                child_processes.push(child);
+                prev_process = Some(&child);
+            }
             Err(err) => eprintln!("{}", err),
         }
     }
 
+    // Collection exit statuses (possibly change and use wait_with_output, or wait with id)
+    // TODO wait with pid, collect vector of pid, and keep track of prev child to get stdin and out
     for child in child_processes.iter_mut() {
         let child_status = child.wait();
         if let Ok(exit_status) = child_status {
@@ -90,6 +139,13 @@ pub fn execute_commands(commands: &mut Vec<Command>) {
             eprintln!("{}", err);
         }
     }
+}
+
+pub struct ShellCommand {
+    command: Command,
+    input_redirection: Option<String>,
+    output_redirection: Option<String>,
+    append: bool,
 }
 
 pub enum CommandType {
