@@ -1,7 +1,8 @@
-#![allow(dead_code)]
-
 use once_cell::sync::Lazy;
+use reqwest;
 use std::collections::{HashMap, HashSet};
+use std::env;
+use std::path::Path;
 use std::process::{Child, Command};
 
 pub static BUILT_IN_SHELL_COMMANDS: Lazy<HashSet<&str>> = Lazy::new(|| {
@@ -16,7 +17,7 @@ pub fn execute_input(input: &str) -> Result<CommandType, String> {
     if first_command_name == "cody" {
         execute_ai_command(input);
     } else if first_command_name == "cd" {
-        execute_cd(input);
+        return execute_cd(input);
     } else if first_command_name == "exit" {
         return Ok(CommandType::Exit);
     } else {
@@ -25,7 +26,7 @@ pub fn execute_input(input: &str) -> Result<CommandType, String> {
     return Ok(CommandType::Other);
 }
 
-pub fn parse_commands(input: &str) -> Vec<Command> {
+pub fn parse_commands(_input: &str) -> Vec<Command> {
     // Split by pipes
 
     // for each split:
@@ -35,13 +36,46 @@ pub fn parse_commands(input: &str) -> Vec<Command> {
     unimplemented!()
 }
 
-pub fn execute_ai_command(input: &str) {
-    // Should only be one command here
+pub fn execute_ai_command(_input: &str) {
     unimplemented!()
+    // // get prompt
+    // let user_prompt: &str = input[4..].trim_start();
+
+    // // send prompt to llama and wait for response
+    // let url = "http://localhost:11434/api/generate";
+    // let client = reqwest::blocking::Client::new();
+    // let mut req_body = HashMap::new();
+    // // req_body.insert("stream", false);
+    // // req_body.insert("model", "llama3");
+
+    // let res = client.post(url).json(&req_body).send()?;
+
+    // // parse response
+
+    // // execute commands
+
+    // unimplemented!()
 }
 
-pub fn execute_cd(input: &str) {
-    unimplemented!()
+pub fn execute_cd(input: &str) -> Result<CommandType, String> {
+    let parts: Vec<&str> = input.split_whitespace().collect();
+    if parts.len() > 2 {
+        return Err("Too many arguments to cd".to_string());
+    }
+
+    let dir = {
+        if parts.len() == 1 {
+            "/"
+        } else {
+            parts[1]
+        }
+    };
+    let path = Path::new(dir);
+    if let Err(err) = env::set_current_dir(&path) {
+        return Err(format!("cd error: {}, {}", dir, err));
+    }
+
+    return Ok(CommandType::Other);
 }
 
 pub fn execute_commands(commands: &mut Vec<Command>) {
