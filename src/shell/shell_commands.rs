@@ -2,46 +2,72 @@
 
 use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
+use std::process::{Child, Command};
 
 pub static BUILT_IN_SHELL_COMMANDS: Lazy<HashSet<&str>> = Lazy::new(|| {
     let mut set: HashSet<&str> = HashSet::new();
     set.insert("cd");
-    set
+    set.insert("exit");
+    return set;
 });
 
-#[derive(Debug)]
-pub struct ShellCommand<'a> {
-    pub name: &'a str,
-    pub arguments: &'a [String],
-    // TODO think about how to handle redirection and pipes
-    // pub input: Option<String>,
-    // pub output: Option<String>,
-
-    // TODO read more on life times / think about it here
-    // TODO figure out type for arguments
+pub fn execute_input(input: &str) -> Result<CommandType, String> {
+    let first_command_name = input.split_whitespace().next().unwrap();
+    if first_command_name == "cody" {
+        execute_ai_command(input);
+    } else if first_command_name == "cd" {
+        execute_cd(input);
+    } else if first_command_name == "exit" {
+        return Ok(CommandType::Exit);
+    } else {
+        execute_commands(&mut parse_commands(input));
+    }
+    return Ok(CommandType::Other);
 }
 
-impl<'a> ShellCommand<'a> {
-    pub fn new(name: &'a str, arguments: &'a [String]) -> ShellCommand<'a> {
-        ShellCommand {
-            name: name,
-            arguments: arguments,
+pub fn parse_commands(input: &str) -> Vec<Command> {
+    // Split by pipes
+
+    // for each split:
+    // split by spaces
+    // first element is
+
+    unimplemented!()
+}
+
+pub fn execute_ai_command(input: &str) {
+    // Should only be one command here
+    unimplemented!()
+}
+
+pub fn execute_cd(input: &str) {
+    unimplemented!()
+}
+
+pub fn execute_commands(commands: &mut Vec<Command>) {
+    let mut child_processes: Vec<Child> = Vec::new();
+
+    for command in commands.iter_mut() {
+        let command_spawn = command.spawn();
+        match command_spawn {
+            Ok(child) => child_processes.push(child),
+            Err(err) => eprintln!("{}", err),
         }
     }
 
-    pub fn parse_commands(input: &str, variables: &HashMap<&str, &str>) -> Result<Vec<ShellCommand<'a>>, ()> {
-        println!("parsed_commands, input: {}, variables: {:?}", input, variables);
-        let fake_commands = vec![Self::new("asdf", &[])];
-        Ok(fake_commands)
+    for child in child_processes.iter_mut() {
+        let child_status = child.wait();
+        if let Ok(exit_status) = child_status {
+            if !exit_status.success() {
+                eprintln!("Command failed")
+            }
+        } else if let Err(err) = child_status {
+            eprintln!("{}", err);
+        }
     }
+}
 
-    pub fn handle_shell_commands(shell_commands: &[ShellCommand]) -> Result<(), ()> {
-        println!("handled_shell_command: {:?}", shell_commands);
-        Ok(())
-    }
-
-    pub fn handle_built_in_shell_commands(shell_commands: &[ShellCommand]) -> Result<(), ()> {
-        println!("handled_built_in_shell_command: {:?}", shell_commands);
-        Ok(())
-    }
+pub enum CommandType {
+    Exit,
+    Other,
 }
