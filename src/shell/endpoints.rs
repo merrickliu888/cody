@@ -1,5 +1,3 @@
-#![allow(dead_code, unused)]
-
 use std::env;
 
 use once_cell::sync::Lazy;
@@ -28,10 +26,7 @@ impl Default for GenerateBodyLocal {
 
 #[derive(Deserialize)]
 pub struct GenerateResponseLocal {
-    pub model: String,
-    pub created_at: String,
     pub response: String,
-    pub done: bool,
 }
 
 pub fn generate_response_local(prompt: String) -> Result<String, String> {
@@ -41,7 +36,6 @@ pub fn generate_response_local(prompt: String) -> Result<String, String> {
         prompt,
         ..Default::default()
     };
-    let auth_token = format!("Bearer: {}", COHERE_API_KEY.as_str());
 
     let res = client.post(url).json(&body).send().map_err(|err| err.to_string())?;
     if !res.status().is_success() {
