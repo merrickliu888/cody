@@ -14,7 +14,7 @@ Cody is built using Rust and uses [Ollama](https://github.com/ollama/ollama) to 
 
 ## Setup
 
-Download the Cody binary then:
+Download the [Cody binary](https://github.com/merrickliu888/cody/blob/main/dist/cody) then:
 
 To setup local LLM
 
