@@ -8,6 +8,13 @@
 
 Cody is an AI Native Unix shell that can translate natural language into shell commands on top of supporting some basic shell functionality. AI capabilities are availabale offline and online as Cody can either deploy a local LLM or use a hosted LLM.
 
+```
+$ cody build this rust project
+Generated Shell Command: cargo build
+   Compiling cody v0.1.0 (/cody)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.03s
+```
+
 ## Implementation
 
 Cody is built using Rust and uses [Ollama](https://github.com/ollama/ollama) to run an LLM (Llama3.1 8b) locally, and uses Cohere as the hosted LLM.
