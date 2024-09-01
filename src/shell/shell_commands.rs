@@ -139,7 +139,7 @@ pub fn execute_ai_command(
     } else {
         generate_response_local(prompt)?
     };
-    println!("Generated Shell Commands: {}", llm_response);
+    println!("Generated Shell Command: {}", llm_response);
     let llm_response = llm_response.trim();
 
     // Parse variables here.
