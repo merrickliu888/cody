@@ -43,12 +43,7 @@ pub fn generate_response_local(prompt: String) -> Result<String, String> {
     };
     let auth_token = format!("Bearer: {}", COHERE_API_KEY.as_str());
 
-    let res = client
-        .post(url)
-        .header(AUTHORIZATION, auth_token)
-        .json(&body)
-        .send()
-        .map_err(|err| err.to_string())?;
+    let res = client.post(url).json(&body).send().map_err(|err| err.to_string())?;
     if !res.status().is_success() {
         return Err(format!("Request Failed: {}", res.status()));
     }
