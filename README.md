@@ -6,7 +6,7 @@
 
 ## About
 
-Cody is an AI Native Unix shell that can translate natural language into shell commands on top of supporting some basic shell functionality. AI capabilities are availabale offline and online as Cody can either deploy a local LLM or use a hosted LLM.
+Cody is an AI Native Unix shell that can translate natural language into shell commands on top of supporting basic shell functionality. AI capabilities are availabale offline and online as Cody can either deploy a local LLM or use a hosted LLM.
 
 ```
 $ cody build this rust project
