@@ -23,12 +23,12 @@ Cody is built using Rust and uses [Ollama](https://github.com/ollama/ollama) to 
 
 Download the [Cody binary](https://github.com/merrickliu888/cody/blob/main/dist/cody) then:
 
-To setup local LLM
+To setup local LLM:
 
 1. Install Ollama: `curl -fsSL https://ollama.com/install.sh | sh`
 2. Create a model using the given `Modelfile` (`ollama create mymodel -f ./Modelfile`)
 
-To setup online
+To setup online:
 
 1. Get a [Cohere API key](https://dashboard.cohere.com/api-keys) and put it in a `.env` file.
 2. Place the `.env` file in the same directory as the `Cody` binary.
